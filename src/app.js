@@ -2,8 +2,12 @@ const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./docs/swagger.json");
 const routes = require("./routes");
+const express = require('express');
+const openBankingRoutes = require('./routes/openBankingRoutes');
 
 const app = express();
+
+app.use('/open-banking', openBankingRoutes);
 
 const PORT = 3000;
 
