@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest"
+    "test": "jest --detectOpenHandles --testEnvironment=node --runInBand --coverage --forceExit"
   },
   "repository": {
     "type": "git",
