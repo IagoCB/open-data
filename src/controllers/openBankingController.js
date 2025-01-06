@@ -1,4 +1,4 @@
-const { fetchApiData } = require('../services/openBankingService');
+const { fetchApiData } = require("../service/openBankingService");
 
 const getApiData = async (req, res) => {
   try {
