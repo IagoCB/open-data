@@ -55,3 +55,4 @@ const fetchApiData = async () => {
 };
 
 module.exports = { fetchApiData };
+
