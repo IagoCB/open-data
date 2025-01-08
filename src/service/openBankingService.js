@@ -1,58 +1,45 @@
-// const axios = require('axios');
+export async function getBankingData() {
+  const url = 'https://data.directory.openbankingbrasil.org.br/participants';
 
-// const fetchApiData = async () => {
-//   try {
-//     const url = 'https://data.directory.openbankingbrasil.org.br/participants';
-//     const response = await axios.get(url);
-
-//     const result = response.data.flatMap(org =>
-//       org.AuthorisationServers.flatMap(server =>
-//         server.ApiResources.map(resource => ({
-//           ApiFamilyType: resource.ApiFamilyType,
-//           ApiDiscoveryId: resource.ApiDiscoveryEndpoints[0]?.ApiDiscoveryId,
-//           ApiEndpoint: resource.ApiDiscoveryEndpoints[0]?.ApiEndpoint,
-//         }))
-//       )
-//     );
-
-//     return result;
-//   } catch (error) {
-//     throw new Error(`Error fetching API data: ${error.message}`);
-//   }
-// };
-
-// module.exports = { fetchApiData };
-
-
-const axios = require('axios');
-
-const fetchApiData = async () => {
   try {
-    const url = 'https://data.directory.openbankingbrasil.org.br/participants';
-    const response = await axios.get(url);
+    const resposta = await fetch(url);
+    if (!resposta.ok) {
+      throw new Error('Falha na requisição à API');
+    }
 
-    const result = response.data.flatMap(org =>
-      org.AuthorisationServers.flatMap(server =>
-        server.ApiResources.filter(resource => {
-          const apiFamilyTypeValid = resource.ApiFamilyType && (
-            resource.ApiFamilyType.toLowerCase().includes('opendata') ||
-            resource.ApiFamilyType.toLowerCase().includes('channels')
-          );
+    const dados = await resposta.json();
+    const dadosFiltrados = filtrarDados(dados);
 
-          const orgNameValid = org.OrganisationName && org.OrganisationName.toLowerCase().includes('btg pactual');
+    const payloads = extrairPayloads(dadosFiltrados);
 
-          return apiFamilyTypeValid && orgNameValid;
-        }).map(resource => ({
-          ApiResourceId: resource.ApiResourceId 
-        }))
-      )
-    );
-
-    return result;
-  } catch (error) {
-    throw new Error(`Error fetching API data: ${error.message}`);
+    return payloads;
+  } catch (erro) {
+    console.error('Erro ao chamar a API:', erro);
+    throw erro;
   }
-};
+}
 
-module.exports = { fetchApiData };
+function filtrarDados(dados) {
+  return dados.filter(item => {
+    if (item.RegisteredName?.toUpperCase() === 'BANCO BTG PACTUAL S.A.') {
+      return item.AuthorisationServers?.some(server => {
+        return server.ApiResources?.some(api => verificarApi(api));
+      });
+    }
+    return false;
+  });
+}
 
+function verificarApi(api) {
+  return api.ApiFamilyType && 
+    (api.ApiFamilyType.toLowerCase().includes('opendata') || api.ApiFamilyType.toLowerCase().includes('channels'));
+}
+
+function extrairPayloads(dadosFiltrados) {
+  return dadosFiltrados.flatMap(item => 
+    item.AuthorisationServers.flatMap(server => 
+      server.ApiResources.filter(api => verificarApi(api))
+        .flatMap(api => api.ApiDiscoveryEndpoints || [])
+    )
+  );
+}
