@@ -207,4 +207,178 @@ describe("Validação de API com YAML", () => {
       "O campo obrigatório 'participant.urlComplementaryList' está ausente."
     );
   });
+
+  test("Deve retornar erro se o padrão YAML não possui um esquema para OKResponse", () => {
+    const invalidYamlPattern = {
+      components: {
+        responses: {
+          NotResponse: {
+            content: {
+              "application/json": {
+                schema: {
+                  properties: {
+                    data: { type: "object" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const apiResponse = {
+      data: {},
+    };
+
+    const validationResult = validateApiResponse(
+      invalidYamlPattern,
+      apiResponse
+    );
+
+    expect(validationResult.isValid).toBe(false);
+    expect(validationResult.errors).toContain(
+      "O padrão YAML não possui um esquema definido para OKResponse."
+    );
+  });
+
+  test("Deve retornar erro se o campo não corresponde ao padrão esperado", () => {
+    const yamlPattern = {
+      components: {
+        responses: {
+          OKResponse: {
+            content: {
+              "application/json": {
+                schema: {
+                  properties: {
+                    data: {
+                      type: "object",
+                      items: {
+                        properties: {
+                          email: {
+                            type: "string",
+                            pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                          },
+                        },
+                        required: ["email"],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const apiResponse = {
+      email: "email_invalido",
+    };
+
+    const validationResult = validateApiResponse(yamlPattern, apiResponse);
+
+    expect(validationResult.isValid).toBe(false);
+    expect(validationResult.errors).toContain(
+      "O campo 'email' não corresponde ao padrão esperado: ^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$."
+    );
+  });
+
+  test("Deve retornar erro se o campo excede o comprimento máximo permitido", () => {
+    const yamlPattern = {
+      components: {
+        responses: {
+          OKResponse: {
+            content: {
+              "application/json": {
+                schema: {
+                  properties: {
+                    data: {
+                      type: "object",
+                      items: {
+                        properties: {
+                          username: {
+                            type: "string",
+                            maxLength: 10,
+                          },
+                        },
+                        required: ["username"],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const apiResponse = {
+      username: "nome_de_usuario_muito_longo",
+    };
+
+    const validationResult = validateApiResponse(yamlPattern, apiResponse);
+
+    expect(validationResult.isValid).toBe(false);
+    expect(validationResult.errors).toContain(
+      "O campo 'username' não deve ter mais que 10 caracteres."
+    );
+  });
+
+  test("Deve validar um campo do tipo objeto chamando a função validateObject", () => {
+    const yamlPatternWithObjectField = {
+      components: {
+        responses: {
+          OKResponse: {
+            content: {
+              "application/json": {
+                schema: {
+                  properties: {
+                    data: {
+                      type: "object",
+                      items: {
+                        properties: {
+                          parentField: {
+                            type: "object",
+                            properties: {
+                              nestedField: {
+                                type: "object",
+                                properties: {
+                                  lastField: { type: "string", minLength: 3 },
+                                },
+                                required: ["lastField"],
+                              },
+                            },
+                            required: ["nestedField"],
+                          },
+                        },
+                        required: ["parentField"],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const apiResponseWithObjectField = {
+      parentField: {
+        nestedField: {
+          lastField: "valid",
+        },
+      },
+    };
+
+    const validationResult = validateApiResponse(
+      yamlPatternWithObjectField,
+      apiResponseWithObjectField
+    );
+
+    expect(validationResult.isValid).toBe(true);
+    expect(validationResult.errors).toEqual([]);
+  });
 });

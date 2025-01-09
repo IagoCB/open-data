@@ -25,7 +25,7 @@ async function loadYamlPattern(yamlPath) {
  *   - `errors` (array): Lista de mensagens de erro caso a resposta não esteja conforme o esperado.
  */
 function validateApiResponse(yamlPattern, apiResponse) {
-  const responseKey = Object.keys(yamlPattern.components.responses || {}).find(
+  const responseKey = Object.keys(yamlPattern.components.responses).find(
     (key) => {
       if (key.includes("OKResponse")) {
         return yamlPattern.components.responses[key];
@@ -45,7 +45,7 @@ function validateApiResponse(yamlPattern, apiResponse) {
       .schema.properties.data.items;
 
   const errors = [];
-  const requiredFields = responseSchema.required || [];
+  const requiredFields = responseSchema?.required;
 
   /**
    * Função que valida um campo específico de acordo com o seu tipo, enum, padrão, comprimento, etc.
@@ -103,7 +103,7 @@ function validateApiResponse(yamlPattern, apiResponse) {
    * @param {object} objectSchema - Esquema do objeto com a definição dos campos internos.
    */
   const validateObject = (parentField, parentValue, objectSchema) => {
-    Object.keys(objectSchema.properties || {}).forEach((key) => {
+    Object.keys(objectSchema.properties).forEach((key) => {
       const field = `${parentField}.${key}`;
       const fieldValue = parentValue[key];
       const fieldSchema = objectSchema.properties[key];
