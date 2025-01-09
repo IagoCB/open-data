@@ -1,7 +1,11 @@
-const express = require("express");
-const swaggerUi = require("swagger-ui-express");
-const swaggerDocument = require("./docs/swagger.json");
-const routes = require("./routes");
+import express from "express";
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
+import routes from "./routes/index.js";
+
+const swaggerDocument = JSON.parse(
+  fs.readFileSync(new URL("./docs/swagger.json", import.meta.url))
+);
 
 const app = express();
 
@@ -17,4 +21,4 @@ app.use("/api", routes);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-module.exports = app;
+export default app;

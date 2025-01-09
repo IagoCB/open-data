@@ -26,6 +26,7 @@
     "express": "^4.21.2",
     "js-yaml": "^4.1.0",
     "json-schema-ref-parser": "^9.0.9",
+    "node-fetch": "^2.7.0",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {

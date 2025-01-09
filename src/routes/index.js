@@ -1,13 +1,16 @@
-import { getBankingData } from '../service/openBankingService.js';  
+import express from 'express';
+import { getBankingData } from '../service/openBankingService.js';
 
-async function fetchBankingData() {
+const router = express.Router();
+
+router.get('/banking-data', async (req, res) => {
   try {
-    const dados = await getBankingData(); 
-    
-    console.log('Dados filtrados:', dados);  
+    const dados = await getBankingData();
+    res.json(dados);
   } catch (erro) {
     console.error('Erro ao obter dados:', erro);
+    res.status(500).json({ error: 'Erro ao obter dados bancários' });
   }
-}
+});
 
-fetchBankingData();
+export default router;
