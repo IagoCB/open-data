@@ -19,34 +19,19 @@ async function loadYamlPattern(yamlPath) {
  * Função que valida a resposta da API com base no esquema fornecido pelo YAML.
  *
  * @param {object} yamlPattern - O padrão do YAML que define o esquema da resposta da API, contendo a definição de resposta em formato JSON.
- * @param {object} apiResponse - A resposta da API a ser validada contra o esquema do YAML.
+ * @param {Array} apiResponse - A resposta da API a ser validada contra o esquema do YAML.
  * @returns {object} - Retorna um objeto contendo:
  *   - `isValid` (boolean): Se a resposta está de acordo com o esquema.
  *   - `errors` (array): Lista de mensagens de erro caso a resposta não esteja conforme o esperado.
  */
-function validateApiResponse(yamlPattern, apiResponse) {
-  const responseKey = Object.keys(yamlPattern.components.responses).find(
-    (key) => {
-      if (key.includes("OKResponse")) {
-        return yamlPattern.components.responses[key];
-      }
-    }
-  );
-
-  if (!responseKey) {
-    return {
-      isValid: false,
-      errors: ["O padrão YAML não possui um esquema definido para OKResponse."],
-    };
-  }
-
+function validateApiResponse(yamlPattern, apiResponse, apiEndpoint) {
+  const finalSegment = apiEndpoint.split("/").pop();
   const responseSchema =
-    yamlPattern.components.responses[responseKey].content["application/json"]
-      .schema.properties.data.items;
+    yamlPattern?.paths["/" + finalSegment].get.responses["200"].content[
+      "application/json"
+    ].schema.properties.data.items;
 
   const errors = [];
-  const requiredFields = responseSchema?.required;
-
   /**
    * Função que valida um campo específico de acordo com o seu tipo, enum, padrão, comprimento, etc.
    *
@@ -122,19 +107,28 @@ function validateApiResponse(yamlPattern, apiResponse) {
     });
   };
 
-  requiredFields.forEach((field) => {
-    const fieldValue = apiResponse[field];
-    const fieldSchema = responseSchema.properties[field];
+  apiResponse.forEach((item, index) => {
+    const itemErrors = [];
+    const requiredFields = responseSchema?.required;
 
-    if (!(field in apiResponse)) {
-      errors.push(`O campo obrigatório '${field}' está ausente.`);
-    } else {
-      if (fieldSchema.type === "object") {
-        validateObject(field, fieldValue, fieldSchema);
+    requiredFields.forEach((field) => {
+      const fieldValue = item[field];
+      const fieldSchema = responseSchema.properties[field];
+
+      if (!(field in item)) {
+        itemErrors.push(
+          `O campo obrigatório '${field}' está ausente no objeto de índice ${index}.`
+        );
       } else {
-        validateField(field, fieldValue, fieldSchema);
+        if (fieldSchema.type === "object") {
+          validateObject(`${index}`, fieldValue, fieldSchema);
+        } else {
+          validateField(`${index}.${field}`, fieldValue, fieldSchema);
+        }
       }
-    }
+    });
+
+    errors.push(...itemErrors);
   });
 
   return {

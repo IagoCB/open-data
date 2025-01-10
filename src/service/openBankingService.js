@@ -1,38 +1,43 @@
-const handleYamlService = require('./handleYamlService.js');
-const fetch = require('node-fetch');
-
+const handleYamlService = require("./handleYamlService.js");
+const fetch = require("node-fetch");
+const path = require("path");
 const { loadYamlPattern, validateApiResponse } = handleYamlService;
 
 async function getBankingData() {
-  const url = 'https://data.directory.openbankingbrasil.org.br/participants';
+  const url = "https://data.directory.openbankingbrasil.org.br/participants";
 
   try {
     const resposta = await fetch(url);
     if (!resposta.ok) {
-      throw new Error('Falha na requisição à API');
+      throw new Error("Falha na requisição à API");
     }
 
     const dados = await resposta.json();
     const dadosFiltrados = filtrarDados(dados);
     const payloads = extrairPayloads(dadosFiltrados);
 
-    // Processar cada endpoint
+    const validationResults = [];
     for (const endpoint of payloads) {
-      await validarEndpoint(endpoint);
+      const validation = await validarEndpoint(endpoint);
+      if (validation)
+        validationResults.push({
+          endPoint: endpoint.ApiEndpoint,
+          ...validation,
+        });
     }
 
-    return payloads;
+    return validationResults;
   } catch (erro) {
-    console.error('Erro ao chamar a API:', erro);
+    console.error("Erro ao chamar a API:", erro);
     throw erro;
   }
 }
 
 function filtrarDados(dados) {
-  return dados.filter(item => {
-    if (item.RegisteredName?.toUpperCase() === 'BANCO BTG PACTUAL S.A.') {
-      return item.AuthorisationServers?.some(server => {
-        return server.ApiResources?.some(api => verificarApi(api));
+  return dados.filter((item) => {
+    if (item.RegisteredName?.toUpperCase() === "BANCO BTG PACTUAL S.A.") {
+      return item.AuthorisationServers?.some((server) => {
+        return server.ApiResources?.some((api) => verificarApi(api));
       });
     }
     return false;
@@ -40,46 +45,67 @@ function filtrarDados(dados) {
 }
 
 function verificarApi(api) {
-  return api.ApiFamilyType && 
-    (api.ApiFamilyType.toLowerCase().includes('opendata') || api.ApiFamilyType.toLowerCase().includes('channels'));
+  return (
+    api.ApiFamilyType &&
+    (api.ApiFamilyType.toLowerCase().includes("opendata") ||
+      api.ApiFamilyType.toLowerCase().includes("channels"))
+  );
 }
 
 function extrairPayloads(dadosFiltrados) {
-  return dadosFiltrados.flatMap(item => 
-    item.AuthorisationServers.flatMap(server => 
-      server.ApiResources.filter(api => verificarApi(api))
-        .flatMap(api => api.ApiDiscoveryEndpoints || [])
+  return dadosFiltrados.flatMap((item) =>
+    item.AuthorisationServers.flatMap((server) =>
+      server.ApiResources.filter((api) => verificarApi(api)).flatMap(
+        (api) => api.ApiDiscoveryEndpoints || []
+      )
     )
   );
 }
 
-// Função para validar cada endpoint
 async function validarEndpoint(endpoint) {
   try {
     const resposta = await fetch(endpoint.ApiEndpoint);
     if (!resposta.ok) {
-      throw new Error(`Falha na requisição ao endpoint: ${endpoint.ApiEndpoint}`);
+      throw new Error(
+        `Falha na requisição ao endpoint: ${endpoint.ApiEndpoint}`
+      );
     }
-
     const apiResponse = await resposta.json();
-    console.log(`Dados obtidos do endpoint ${endpoint.ApiEndpoint}:`, apiResponse);
+    const yaml = getYamlFile(endpoint.ApiEndpoint);
 
-    const yamlPattern = await loadYamlPattern('path/to/yaml/file.yaml');
+    const yamlPath = path.resolve(__dirname, "../schemas/" + yaml);
 
-    // Validar a resposta da API
-    const validationResult = validateApiResponse(yamlPattern, apiResponse);
+    const yamlPattern = await loadYamlPattern(yamlPath);
 
-    if (validationResult.isValid) {
-      console.log(`A resposta do endpoint ${endpoint.ApiEndpoint} é válida.`);
-    } else {
-      console.error(`Erros de validação para o endpoint ${endpoint.ApiEndpoint}:`, validationResult.errors);
+    const validationResult = validateApiResponse(
+      yamlPattern,
+      apiResponse.data,
+      endpoint.ApiEndpoint
+    );
+
+    if (validationResult === null) {
     }
-
-    // Exibe resultado completo da validação para depuração
-    console.log(`Resultado da validação do endpoint ${endpoint.ApiEndpoint}:`, validationResult);
+    return validationResult;
   } catch (erro) {
-    console.error(`Erro ao validar o endpoint ${endpoint.ApiEndpoint}:`, erro);
+    // console.error(`Erro ao validar o endpoint ${endpoint.ApiEndpoint}:`, erro);
+  }
+
+  function getYamlFile(endpoint) {
+    const regex = /\/open-banking\/([\w-]+)\/v\d+/;
+
+    const match = endpoint.match(regex);
+
+    if (match && match[1]) {
+      return `${match[1]}.yml`;
+    } else {
+      return "Arquivo YAML não encontrado";
+    }
   }
 }
 
-module.exports = { getBankingData, filtrarDados, extrairPayloads, validarEndpoint };
+module.exports = {
+  getBankingData,
+  filtrarDados,
+  extrairPayloads,
+  validarEndpoint,
+};

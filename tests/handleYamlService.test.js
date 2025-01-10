@@ -5,6 +5,8 @@ const {
 } = require("../src/service/handleYamlService");
 
 describe("Validação de API com YAML", () => {
+  const apiEndpoint =
+    "https://btgmaisbusiness.openbanking.btgpactual.com/open-banking/acquiring-services/v2/personals";
   const yamlPath = path.resolve(
     __dirname,
     "../src/schemas/acquiring-services.yml"
@@ -16,251 +18,253 @@ describe("Validação de API com YAML", () => {
   });
 
   test("Deve validar corretamente uma resposta de API válida", () => {
-    const validApiResponse = {
-      participant: {
-        brand: "Organização",
-        name: "Organização A1",
-        cnpjNumber: "13456789000112",
-        urlComplementaryList: "https://empresaa1.com/companies",
+    const validApiResponse = [
+      {
+        participant: {
+          brand: "Organização",
+          name: "Organização A1",
+          cnpjNumber: "13456789000112",
+          urlComplementaryList: "https://empresaa1.com/companies",
+        },
+        feeName: "TAXA_DESCONTO_MODALIDADE_CREDITO",
+        code: "MDR_CREDITO",
+        prices: [
+          {
+            interval: "1_FAIXA",
+            value: "0.020300",
+            customerRate: "0.500000",
+          },
+          {
+            interval: "2_FAIXA",
+            value: "0.030600",
+            customerRate: "0.100000",
+          },
+          {
+            interval: "3_FAIXA",
+            value: "0.034300",
+            customerRate: "0.300000",
+          },
+          {
+            interval: "4_FAIXA",
+            value: "0.246800",
+            customerRate: "0.100000",
+          },
+        ],
+        chargingTriggerInfo: "Recebimento através de transação de cartão.",
+        minimum: "0.019800",
+        maximum: "0.019800",
       },
-      feeName: "TAXA_DESCONTO_MODALIDADE_CREDITO",
-      code: "MDR_CREDITO",
-      prices: [
-        {
-          interval: "1_FAIXA",
-          value: "0.020300",
-          customerRate: "0.500000",
-        },
-        {
-          interval: "2_FAIXA",
-          value: "0.030600",
-          customerRate: "0.100000",
-        },
-        {
-          interval: "3_FAIXA",
-          value: "0.034300",
-          customerRate: "0.300000",
-        },
-        {
-          interval: "4_FAIXA",
-          value: "0.246800",
-          customerRate: "0.100000",
-        },
-      ],
-      chargingTriggerInfo: "Recebimento através de transação de cartão.",
-      minimum: "0.019800",
-      maximum: "0.019800",
-    };
+    ];
 
-    const validationResult = validateApiResponse(yamlPattern, validApiResponse);
+    const validationResult = validateApiResponse(
+      yamlPattern,
+      validApiResponse,
+      apiEndpoint
+    );
 
     expect(validationResult.isValid).toBe(true);
     expect(validationResult.errors).toEqual([]);
   });
 
   test("Deve retornar erro se campos obrigatórios estiverem ausentes", () => {
-    const invalidApiResponse = {
-      links: { self: "https://api.example.com/services" },
-      meta: { total: 2 },
-    };
+    const invalidApiResponse = [
+      {
+        links: { self: "https://api.example.com/services" },
+        meta: { total: 2 },
+      },
+    ];
 
     const validationResult = validateApiResponse(
       yamlPattern,
-      invalidApiResponse
+      invalidApiResponse,
+      apiEndpoint
     );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo obrigatório 'participant' está ausente.",
-      "O campo obrigatório 'feeName' está ausente.",
-      "O campo obrigatório 'code' está ausente.",
-      "O campo obrigatório 'prices' está ausente.",
-      "O campo obrigatório 'chargingTriggerInfo' está ausente.",
-      "O campo obrigatório 'minimum' está ausente.",
-      "O campo obrigatório 'maximum' está ausente."
+      "O campo obrigatório 'participant' está ausente no objeto de índice 0.",
+      "O campo obrigatório 'feeName' está ausente no objeto de índice 0.",
+      "O campo obrigatório 'code' está ausente no objeto de índice 0.",
+      "O campo obrigatório 'prices' está ausente no objeto de índice 0.",
+      "O campo obrigatório 'chargingTriggerInfo' está ausente no objeto de índice 0.",
+      "O campo obrigatório 'minimum' está ausente no objeto de índice 0.",
+      "O campo obrigatório 'maximum' está ausente no objeto de índice 0."
     );
   });
 
   test("Deve validar a resposta de API com tipo de dado incorreto em campo obrigatório", () => {
-    const invalidApiResponse = {
-      participant: { id: 12345, name: 12345 },
-      feeName: "INVALID_FEE_NAME",
-      code: "MDR_CREDITO",
-      prices: [
-        { priceType: "percentual", value: "0.019800" },
-        { priceType: "fixo", value: "10.00" },
-        { priceType: "percentual", value: "0.010000" },
-        { priceType: "fixo", value: "5.00" },
-      ],
-      chargingTriggerInfo: "",
-      minimum: "0.019800",
-      maximum: "0.019800",
-    };
+    const invalidApiResponse = [
+      {
+        participant: { id: 12345, name: 12345 },
+        feeName: "INVALID_FEE_NAME",
+        code: "MDR_CREDITO",
+        prices: [
+          { priceType: "percentual", value: "0.019800" },
+          { priceType: "fixo", value: "10.00" },
+          { priceType: "percentual", value: "0.010000" },
+          { priceType: "fixo", value: "5.00" },
+        ],
+        chargingTriggerInfo: "",
+        minimum: "0.019800",
+        maximum: "0.019800",
+      },
+    ];
 
     const validationResult = validateApiResponse(
       yamlPattern,
-      invalidApiResponse
+      invalidApiResponse,
+      apiEndpoint
     );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo 'participant.name' deve ser do tipo string, mas foi recebido: number."
+      "O campo obrigatório '0.brand' está ausente.",
+      "O campo '0.name' deve ser do tipo string, mas foi recebido: number.",
+      "O campo obrigatório '0.cnpjNumber' está ausente.",
+      "O campo obrigatório '0.urlComplementaryList' está ausente.",
+      "O campo '0.feeName' deve ser um dos seguintes valores: TAXA_DESCONTO_MODALIDADE_CREDITO, TAXA_DESCONTO_MODALIDADE_DEBITO.",
+      "O campo '0.chargingTriggerInfo' deve ter pelo menos 1 caracteres."
     );
   });
 
   test("Deve validar a resposta de API quando um valor de enum é incorreto", () => {
-    const invalidApiResponse = {
-      participant: {
-        id: "12345",
-        name: "Open Finance Participant",
-        type: "Pessoa Jurídica",
-        registrationNumber: "12345678000123",
-        country: "Brasil",
+    const invalidApiResponse = [
+      {
+        participant: {
+          id: "12345",
+          name: "Open Finance Participant",
+          type: "Pessoa Jurídica",
+          registrationNumber: "12345678000123",
+          country: "Brasil",
+        },
+        feeName: "INVALID_FEE_NAME",
+        code: "MDR_CREDITO",
+        prices: [
+          { priceType: "percentual", value: "0.019800" },
+          { priceType: "fixo", value: "10.00" },
+          { priceType: "percentual", value: "0.010000" },
+          { priceType: "fixo", value: "5.00" },
+        ],
+        chargingTriggerInfo: "Recebimento através de transação de cartão.",
+        minimum: "0.019800",
+        maximum: "0.019800",
       },
-      feeName: "INVALID_FEE_NAME",
-      code: "MDR_CREDITO",
-      prices: [
-        { priceType: "percentual", value: "0.019800" },
-        { priceType: "fixo", value: "10.00" },
-        { priceType: "percentual", value: "0.010000" },
-        { priceType: "fixo", value: "5.00" },
-      ],
-      chargingTriggerInfo: "Recebimento através de transação de cartão.",
-      minimum: "0.019800",
-      maximum: "0.019800",
-    };
+    ];
 
     const validationResult = validateApiResponse(
       yamlPattern,
-      invalidApiResponse
+      invalidApiResponse,
+      apiEndpoint
     );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo 'feeName' deve ser um dos seguintes valores: TAXA_DESCONTO_MODALIDADE_CREDITO, TAXA_DESCONTO_MODALIDADE_DEBITO."
+      "O campo obrigatório '0.brand' está ausente.",
+      "O campo obrigatório '0.cnpjNumber' está ausente.",
+      "O campo obrigatório '0.urlComplementaryList' está ausente.",
+      "O campo '0.feeName' deve ser um dos seguintes valores: TAXA_DESCONTO_MODALIDADE_CREDITO, TAXA_DESCONTO_MODALIDADE_DEBITO."
     );
   });
 
   test("Deve retornar erro se um campo de string estiver com comprimento incorreto", () => {
-    const invalidApiResponse = {
-      participant: {
-        id: "12345",
-        name: "Open Finance Participant",
-        type: "Pessoa Jurídica",
-        registrationNumber: "12345678000123",
-        country: "Brasil",
+    const invalidApiResponse = [
+      {
+        participant: {
+          id: "12345",
+          name: "Open Finance Participant",
+          type: "Pessoa Jurídica",
+          registrationNumber: "12345678000123",
+          country: "Brasil",
+        },
+        feeName: "TAXA_DESCONTO_MODALIDADE_CREDITO",
+        code: "MDR_CREDITO",
+        prices: [
+          { priceType: "percentual", value: "0.019800" },
+          { priceType: "fixo", value: "10.00" },
+          { priceType: "percentual", value: "0.010000" },
+          { priceType: "fixo", value: "5.00" },
+        ],
+        chargingTriggerInfo: "",
+        minimum: "0.019800",
+        maximum: "0.019800",
       },
-      feeName: "TAXA_DESCONTO_MODALIDADE_CREDITO",
-      code: "MDR_CREDITO",
-      prices: [
-        { priceType: "percentual", value: "0.019800" },
-        { priceType: "fixo", value: "10.00" },
-        { priceType: "percentual", value: "0.010000" },
-        { priceType: "fixo", value: "5.00" },
-      ],
-      chargingTriggerInfo: "",
-      minimum: "0.019800",
-      maximum: "0.019800",
-    };
+    ];
 
     const validationResult = validateApiResponse(
       yamlPattern,
-      invalidApiResponse
+      invalidApiResponse,
+      apiEndpoint
     );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo 'chargingTriggerInfo' deve ter pelo menos 1 caracteres."
+      "O campo obrigatório '0.brand' está ausente.",
+      "O campo obrigatório '0.cnpjNumber' está ausente.",
+      "O campo obrigatório '0.urlComplementaryList' está ausente.",
+      "O campo '0.chargingTriggerInfo' deve ter pelo menos 1 caracteres."
     );
   });
 
   test("Deve validar a resposta de API com um campo ausente de um objeto", () => {
-    const invalidApiResponse = {
-      participant: {
-        id: "12345",
-        name: "Open Finance Participant",
-        type: "Pessoa Jurídica",
-        registrationNumber: "12345678000123",
+    const invalidApiResponse = [
+      {
+        participant: {
+          id: "12345",
+          name: "Open Finance Participant",
+          type: "Pessoa Jurídica",
+          registrationNumber: "12345678000123",
+        },
+        feeName: "TAXA_DESCONTO_MODALIDADE_CREDITO",
+        code: "MDR_CREDITO",
+        prices: [
+          { priceType: "percentual", value: "0.019800" },
+          { priceType: "fixo", value: "10.00" },
+          { priceType: "percentual", value: "0.010000" },
+          { priceType: "fixo", value: "5.00" },
+        ],
+        chargingTriggerInfo: "Recebimento através de transação de cartão.",
+        minimum: "0.019800",
+        maximum: "0.019800",
       },
-      feeName: "TAXA_DESCONTO_MODALIDADE_CREDITO",
-      code: "MDR_CREDITO",
-      prices: [
-        { priceType: "percentual", value: "0.019800" },
-        { priceType: "fixo", value: "10.00" },
-        { priceType: "percentual", value: "0.010000" },
-        { priceType: "fixo", value: "5.00" },
-      ],
-      chargingTriggerInfo: "Recebimento através de transação de cartão.",
-      minimum: "0.019800",
-      maximum: "0.019800",
-    };
+    ];
 
     const validationResult = validateApiResponse(
       yamlPattern,
-      invalidApiResponse
+      invalidApiResponse,
+      apiEndpoint
     );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo obrigatório 'participant.brand' está ausente.",
-      "O campo obrigatório 'participant.cnpjNumber' está ausente.",
-      "O campo obrigatório 'participant.urlComplementaryList' está ausente."
-    );
-  });
-
-  test("Deve retornar erro se o padrão YAML não possui um esquema para OKResponse", () => {
-    const invalidYamlPattern = {
-      components: {
-        responses: {
-          NotResponse: {
-            content: {
-              "application/json": {
-                schema: {
-                  properties: {
-                    data: { type: "object" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    const apiResponse = {
-      data: {},
-    };
-
-    const validationResult = validateApiResponse(
-      invalidYamlPattern,
-      apiResponse
-    );
-
-    expect(validationResult.isValid).toBe(false);
-    expect(validationResult.errors).toContain(
-      "O padrão YAML não possui um esquema definido para OKResponse."
+      "O campo obrigatório '0.brand' está ausente.",
+      "O campo obrigatório '0.cnpjNumber' está ausente.",
+      "O campo obrigatório '0.urlComplementaryList' está ausente."
     );
   });
 
   test("Deve retornar erro se o campo não corresponde ao padrão esperado", () => {
     const yamlPattern = {
-      components: {
-        responses: {
-          OKResponse: {
-            content: {
-              "application/json": {
-                schema: {
-                  properties: {
-                    data: {
-                      type: "object",
-                      items: {
-                        properties: {
-                          email: {
-                            type: "string",
-                            pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+      paths: {
+        "/personals": {
+          get: {
+            responses: {
+              200: {
+                content: {
+                  "application/json": {
+                    schema: {
+                      properties: {
+                        data: {
+                          type: "object",
+                          items: {
+                            properties: {
+                              email: {
+                                type: "string",
+                                pattern: "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+                              },
+                            },
+                            required: ["email"],
                           },
                         },
-                        required: ["email"],
                       },
                     },
                   },
@@ -272,37 +276,47 @@ describe("Validação de API com YAML", () => {
       },
     };
 
-    const apiResponse = {
-      email: "email_invalido",
-    };
+    const apiResponse = [
+      {
+        email: "email_invalido",
+      },
+    ];
 
-    const validationResult = validateApiResponse(yamlPattern, apiResponse);
+    const validationResult = validateApiResponse(
+      yamlPattern,
+      apiResponse,
+      apiEndpoint
+    );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo 'email' não corresponde ao padrão esperado: ^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$."
+      "O campo '0.email' não corresponde ao padrão esperado: ^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$."
     );
   });
 
   test("Deve retornar erro se o campo excede o comprimento máximo permitido", () => {
     const yamlPattern = {
-      components: {
-        responses: {
-          OKResponse: {
-            content: {
-              "application/json": {
-                schema: {
-                  properties: {
-                    data: {
-                      type: "object",
-                      items: {
-                        properties: {
-                          username: {
-                            type: "string",
-                            maxLength: 10,
+      paths: {
+        "/personals": {
+          get: {
+            responses: {
+              200: {
+                content: {
+                  "application/json": {
+                    schema: {
+                      properties: {
+                        data: {
+                          type: "object",
+                          items: {
+                            properties: {
+                              username: {
+                                type: "string",
+                                maxLength: 10,
+                              },
+                            },
+                            required: ["username"],
                           },
                         },
-                        required: ["username"],
                       },
                     },
                   },
@@ -314,46 +328,59 @@ describe("Validação de API com YAML", () => {
       },
     };
 
-    const apiResponse = {
-      username: "nome_de_usuario_muito_longo",
-    };
+    const apiResponse = [
+      {
+        username: "nome_de_usuario_muito_longo",
+      },
+    ];
 
-    const validationResult = validateApiResponse(yamlPattern, apiResponse);
+    const validationResult = validateApiResponse(
+      yamlPattern,
+      apiResponse,
+      apiEndpoint
+    );
 
     expect(validationResult.isValid).toBe(false);
     expect(validationResult.errors).toContain(
-      "O campo 'username' não deve ter mais que 10 caracteres."
+      "O campo '0.username' não deve ter mais que 10 caracteres."
     );
   });
 
   test("Deve validar um campo do tipo objeto chamando a função validateObject", () => {
     const yamlPatternWithObjectField = {
-      components: {
-        responses: {
-          OKResponse: {
-            content: {
-              "application/json": {
-                schema: {
-                  properties: {
-                    data: {
-                      type: "object",
-                      items: {
-                        properties: {
-                          parentField: {
-                            type: "object",
+      paths: {
+        "/personals": {
+          get: {
+            responses: {
+              200: {
+                content: {
+                  "application/json": {
+                    schema: {
+                      properties: {
+                        data: {
+                          type: "object",
+                          items: {
                             properties: {
-                              nestedField: {
+                              parentField: {
                                 type: "object",
                                 properties: {
-                                  lastField: { type: "string", minLength: 3 },
+                                  nestedField: {
+                                    type: "object",
+                                    properties: {
+                                      lastField: {
+                                        type: "string",
+                                        minLength: 3,
+                                      },
+                                    },
+                                    required: ["lastField"],
+                                  },
                                 },
-                                required: ["lastField"],
+                                required: ["nestedField"],
                               },
                             },
-                            required: ["nestedField"],
+                            required: ["parentField"],
                           },
                         },
-                        required: ["parentField"],
                       },
                     },
                   },
@@ -365,17 +392,20 @@ describe("Validação de API com YAML", () => {
       },
     };
 
-    const apiResponseWithObjectField = {
-      parentField: {
-        nestedField: {
-          lastField: "valid",
+    const apiResponseWithObjectField = [
+      {
+        parentField: {
+          nestedField: {
+            lastField: "valid",
+          },
         },
       },
-    };
+    ];
 
     const validationResult = validateApiResponse(
       yamlPatternWithObjectField,
-      apiResponseWithObjectField
+      apiResponseWithObjectField,
+      apiEndpoint
     );
 
     expect(validationResult.isValid).toBe(true);

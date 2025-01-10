@@ -1,5 +1,10 @@
 const fetch = require("node-fetch");
-const { getBankingData, filtrarDados, extrairPayloads, validarEndpoint } = require("../src/service/openBankingService");
+const {
+  getBankingData,
+  filtrarDados,
+  extrairPayloads,
+  validarEndpoint,
+} = require("../src/service/openBankingService");
 
 jest.mock("node-fetch");
 
@@ -147,13 +152,22 @@ describe("OpenBanking Service", () => {
 
     expect(fetch).toHaveBeenCalledWith(endpoint.ApiEndpoint);
     expect(loadYamlPattern).toHaveBeenCalledWith("path/to/yaml/file.yaml");
-    expect(validateApiResponse).toHaveBeenCalledWith(mockYamlPattern, mockResponse.json());
+    expect(validateApiResponse).toHaveBeenCalledWith(
+      mockYamlPattern,
+      mockResponse.json()
+    );
   });
 
   it("should throw error if endpoint validation fails", async () => {
-    const mockResponse = { status: 200, json: async () => ({ success: false }) };
+    const mockResponse = {
+      status: 200,
+      json: async () => ({ success: false }),
+    };
     const mockYamlPattern = {};
-    const mockValidationResult = { isValid: false, errors: ["Erro de validação"] };
+    const mockValidationResult = {
+      isValid: false,
+      errors: ["Erro de validação"],
+    };
 
     // Mock das funções externas
     jest.mock("../src/service/handleYamlService", () => ({
@@ -169,10 +183,16 @@ describe("OpenBanking Service", () => {
 
     expect(fetch).toHaveBeenCalledWith(endpoint.ApiEndpoint);
     expect(loadYamlPattern).toHaveBeenCalledWith("path/to/yaml/file.yaml");
-    expect(validateApiResponse).toHaveBeenCalledWith(mockYamlPattern, mockResponse.json());
+    expect(validateApiResponse).toHaveBeenCalledWith(
+      mockYamlPattern,
+      mockResponse.json()
+    );
 
     // Testar se os erros de validação são logados
     console.error = jest.fn();
-    expect(console.error).toHaveBeenCalledWith("Erros de validação para o endpoint https://example.com:", ["Erro de validação"]);
+    expect(console.error).toHaveBeenCalledWith(
+      "Erros de validação para o endpoint https://example.com:",
+      ["Erro de validação"]
+    );
   });
 });
