@@ -9,12 +9,38 @@
   "basePath": "/api",
   "schemes": ["http"],
   "paths": {
-    "/health": {
+    "/banking-data": {
       "get": {
-        "summary": "Check API health",
+        "summary": "Validates open data APIs",
         "responses": {
           "200": {
-            "description": "API is running"
+            "description": "API is running",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "endPoint": {
+                    "type": "string",
+                    "example": "/api/example"
+                  },
+                  "isValid": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "erros": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "O campo obrigatório X está ausente.",
+                      "O campo obrigatório X está ausente no objeto de índice 0."
+                    ]
+                  }
+                }
+              }
+            }
           }
         }
       }
