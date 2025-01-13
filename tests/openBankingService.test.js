@@ -6,6 +6,8 @@ const {
   validarEndpoint,
 } = require("../src/service/openBankingService");
 
+const { loadYamlPattern, validateApiResponse } = require("../src/service/handleYamlService");
+
 jest.mock("../src/service/handleYamlService", () => ({
   loadYamlPattern: jest.fn().mockResolvedValue({}),
   validateApiResponse: jest.fn().mockReturnValue({ isValid: true, errors: [] }),
@@ -14,7 +16,6 @@ jest.mock("../src/service/handleYamlService", () => ({
 jest.mock("node-fetch");
 
 describe("OpenBanking Service", () => {
-
   it("should fetch and transform API data correctly", async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
@@ -38,7 +39,7 @@ describe("OpenBanking Service", () => {
           ],
         },
       ],
-    });
+    });    
 
     const result = await getBankingData();
 
@@ -66,15 +67,17 @@ describe("OpenBanking Service", () => {
     await validarEndpoint(endpoint);
 
     expect(fetch).toHaveBeenCalledWith(endpoint.ApiEndpoint);
-    expect(loadYamlPattern).toHaveBeenCalledWith("path/to/yaml/file.yaml");
+    expect(loadYamlPattern).toHaveBeenCalledWith("src/routes/schemas");
   });
 
-  it("should throw error if endpoint validation fails", async () => {
-    const mockResponse = {
-      ok: true,
-      json: async () => ({ success: false }),
-    };
+  it("should log validation errors if endpoint validation fails", async () => {
+    const mockResponse = { ok: true, json: async () => ({ success: false }) };
     const endpoint = { ApiEndpoint: "https://example.com" };
+
+    validateApiResponse.mockReturnValueOnce({
+      isValid: false,
+      errors: ["Erro de validação"],
+    });
 
     fetch.mockResolvedValueOnce(mockResponse);
 
