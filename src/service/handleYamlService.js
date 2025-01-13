@@ -88,7 +88,7 @@ function validateApiResponse(yamlPattern, apiResponse, apiEndpoint) {
    * @param {object} objectSchema - Esquema do objeto com a definição dos campos internos.
    */
   const validateObject = (parentField, parentValue, objectSchema) => {
-    Object.keys(objectSchema.properties).forEach((key) => {
+    objectSchema.required.forEach((key) => {
       const field = `${parentField}.${key}`;
       const fieldValue = parentValue[key];
       const fieldSchema = objectSchema.properties[key];
