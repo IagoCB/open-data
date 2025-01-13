@@ -19,17 +19,18 @@ async function getBankingData() {
     const validationResults = [];
     for (const endpoint of payloads) {
       const validation = await validarEndpoint(endpoint);
-      if (validation)
+      if (validation) {
         validationResults.push({
           endPoint: endpoint.ApiEndpoint,
           ...validation,
         });
+      }
     }
 
     return validationResults;
   } catch (erro) {
     console.error("Erro ao chamar a API:", erro);
-    throw erro;
+    throw erro; // Lançar erro para que os testes possam capturá-lo
   }
 }
 
@@ -74,7 +75,6 @@ async function validarEndpoint(endpoint) {
     const yaml = getYamlFile(endpoint.ApiEndpoint);
 
     const yamlPath = path.resolve(__dirname, "../schemas/" + yaml);
-
     const yamlPattern = await loadYamlPattern(yamlPath);
 
     const validationResult = validateApiResponse(
@@ -84,22 +84,24 @@ async function validarEndpoint(endpoint) {
     );
 
     if (validationResult === null) {
+      console.error(`Erro de validação no endpoint ${endpoint.ApiEndpoint}`);
     }
     return validationResult;
   } catch (erro) {
-    // console.error(`Erro ao validar o endpoint ${endpoint.ApiEndpoint}:`, erro);
+    console.error(`Erro ao validar o endpoint ${endpoint.ApiEndpoint}:`, erro);
+    throw erro; // Lançar erro para que o teste capture
   }
+}
 
-  function getYamlFile(endpoint) {
-    const regex = /\/open-banking\/([\w-]+)\/v\d+/;
+function getYamlFile(endpoint) {
+  const regex = /\/open-banking\/([\w-]+)\/v\d+/;
 
-    const match = endpoint.match(regex);
+  const match = endpoint.match(regex);
 
-    if (match && match[1]) {
-      return `${match[1]}.yml`;
-    } else {
-      return "Arquivo YAML não encontrado";
-    }
+  if (match && match[1]) {
+    return `${match[1]}.yml`;
+  } else {
+    return "Arquivo YAML não encontrado";
   }
 }
 
